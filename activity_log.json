@@ -1,0 +1,42 @@
+[
+    {
+        "timestamp": "2026-04-18 10:16:26",
+        "action": "Login",
+        "details": "User 'tes' logged in"
+    },
+    {
+        "timestamp": "2026-04-18 10:17:24",
+        "action": "Login",
+        "details": "User 'tes' logged in"
+    },
+    {
+        "timestamp": "2026-04-18 10:17:35",
+        "action": "Database Saved",
+        "details": "Total records: 1"
+    },
+    {
+        "timestamp": "2026-04-18 10:17:35",
+        "action": "Record Added",
+        "details": "Added student: asdad"
+    },
+    {
+        "timestamp": "2026-04-18 10:18:03",
+        "action": "Database Saved",
+        "details": "Total records: 2"
+    },
+    {
+        "timestamp": "2026-04-18 10:18:03",
+        "action": "Record Added",
+        "details": "Added student: asdas"
+    },
+    {
+        "timestamp": "2026-04-18 10:18:27",
+        "action": "Export",
+        "details": "JSON exported to student_data_20260418_101827.json"
+    },
+    {
+        "timestamp": "2026-04-18 10:18:32",
+        "action": "Export",
+        "details": "Activity log exported to activity_log_20260418_101832.json"
+    }
+]
