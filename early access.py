@@ -39,7 +39,7 @@ class ProTestingApp:
     def __init__(self, root):
         """Initialize the root window, theme settings, data model, and UI structure."""
         self.root = root
-        self.root.title("Pro by TESTING - Student Management System")
+        self.root.title("early access- TESTING")
         self.root.geometry("1400x800")
         self.root.configure(bg="#0a0a0a")
         self.root.resizable(True, True)
@@ -316,7 +316,7 @@ class ProTestingApp:
         login_frame = ttk.Frame(self.root, padding=(40, 40, 40, 40))
         login_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.create_neon_label(login_frame, "▶ ACCESS TERMINAL - PRO BY TESTING ◀", style="Header.TLabel").grid(row=0, column=0, columnspan=2, pady=(0, 30))
+        self.create_neon_label(login_frame, "▶ early access ◀", style="Header.TLabel").grid(row=0, column=0, columnspan=2, pady=(0, 30))
         
         self.create_neon_label(login_frame, "Username:").grid(row=1, column=0, sticky="w", padx=10, pady=8)
         username_entry = ttk.Entry(login_frame, textvariable=self.username_var, font=("Courier New", 12), width=32)
@@ -365,7 +365,7 @@ class ProTestingApp:
         self.sidebar_frame = sidebar_frame
         self.content_frame = content_frame
 
-        self.create_neon_label(sidebar_frame, "◆ PRO BY TESTING ◆", style="Header.TLabel").pack(pady=(0, 30), anchor="w")
+        self.create_neon_label(sidebar_frame, "◆early access◆", style="Header.TLabel").pack(pady=(0, 30), anchor="w")
         self.create_neon_label(sidebar_frame, "► NAVIGATION", style="Section.TLabel").pack(anchor="w", pady=(0, 16))
 
         self.create_sidebar_button(sidebar_frame, "📊 Overview", self.show_dashboard).pack(fill="x", pady=10)
