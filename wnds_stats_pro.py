@@ -33,22 +33,20 @@ except ImportError:
     REPORTLAB_AVAILABLE = False
 
 
-class OmegaTerminalApp:
-    """Main application class for the Omega Terminal-inspired student data system."""
+class ProTestingApp:
+    """Main application class for the Pro by TESTING student data system."""
 
     def __init__(self, root):
         """Initialize the root window, theme settings, data model, and UI structure."""
         self.root = root
-        self.root.title("Omega Terminal - Student Management System")
+        self.root.title("Pro by TESTING - Student Management System")
         self.root.geometry("1400x800")
         self.root.configure(bg="#0a0a0a")
         self.root.resizable(True, True)
 
         # Data storage locations and current in-memory dataset
         self.database_path = Path(__file__).with_name("database.json")
-        self.activity_log_path = Path(__file__).with_name("activity_log.json")
         self.student_data = []
-        self.activity_log = []
 
         # Login input variables
         self.username_var = StringVar()
@@ -76,7 +74,6 @@ class OmegaTerminalApp:
 
         # Load persisted data and prepare the UI
         self.load_database()
-        self.load_activity_log()
         self.create_styles()
         self.create_login_screen()
 
@@ -114,33 +111,15 @@ class OmegaTerminalApp:
         except (json.JSONDecodeError, IOError):
             self.activity_log = []
 
-    def save_activity_log(self):
-        """Write activity log to JSON file."""
-        with self.activity_log_path.open("w", encoding="utf-8") as file:
-            json.dump(self.activity_log, file, indent=4)
-
-    def log_activity(self, action, details=""):
-        """Add entry to activity log."""
-        entry = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "action": action,
-            "details": details
-        }
-        self.activity_log.append(entry)
-        self.save_activity_log()
-
     def save_database(self):
         """Write the current list of student records back to the JSON database file."""
         with self.database_path.open("w", encoding="utf-8") as file:
             json.dump(self.student_data, file, indent=4)
-        # Auto-save with activity log
-        self.log_activity("Database Saved", f"Total records: {len(self.student_data)}")
 
     def add_student_record(self, record):
         """Append a new student record and persist it."""
         self.student_data.append(record)
         self.save_database()
-        self.log_activity("Record Added", f"Added student: {record['Name']}")
         self.refresh_student_table()
         self.refresh_statistics()
         self.show_notification(f"✓ Student '{record['Name']}' added successfully!")
@@ -150,7 +129,6 @@ class OmegaTerminalApp:
         old_name = self.student_data[index].get("Name", "Unknown")
         self.student_data[index] = updated_record
         self.save_database()
-        self.log_activity("Record Updated", f"Updated student: {updated_record['Name']}")
         self.refresh_student_table()
         self.refresh_statistics()
         self.show_notification(f"✓ Student '{updated_record['Name']}' updated successfully!")
@@ -160,7 +138,6 @@ class OmegaTerminalApp:
         deleted_name = self.student_data[index].get("Name", "Unknown")
         del self.student_data[index]
         self.save_database()
-        self.log_activity("Record Deleted", f"Deleted student: {deleted_name}")
         self.refresh_student_table()
         self.refresh_statistics()
         self.show_notification(f"✓ Student '{deleted_name}' deleted successfully!")
@@ -339,7 +316,7 @@ class OmegaTerminalApp:
         login_frame = ttk.Frame(self.root, padding=(40, 40, 40, 40))
         login_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        self.create_neon_label(login_frame, "▶ ACCESS TERMINAL ◀", style="Header.TLabel").grid(row=0, column=0, columnspan=2, pady=(0, 30))
+        self.create_neon_label(login_frame, "▶ ACCESS TERMINAL - PRO BY TESTING ◀", style="Header.TLabel").grid(row=0, column=0, columnspan=2, pady=(0, 30))
         
         self.create_neon_label(login_frame, "Username:").grid(row=1, column=0, sticky="w", padx=10, pady=8)
         username_entry = ttk.Entry(login_frame, textvariable=self.username_var, font=("Courier New", 12), width=32)
@@ -363,11 +340,9 @@ class OmegaTerminalApp:
         password = self.password_var.get().strip()
 
         if username == "tes" and password == "1234":
-            self.log_activity("Login", f"User '{username}' logged in")
             self.create_main_interface()
             return
 
-        self.log_activity("Login Failed", f"Invalid credentials for user '{username}'")
         messagebox.showerror("ACCESS DENIED", "Invalid username or password.\nPlease try again.")
 
     # ----------------------------------------------------------------------
@@ -390,13 +365,12 @@ class OmegaTerminalApp:
         self.sidebar_frame = sidebar_frame
         self.content_frame = content_frame
 
-        self.create_neon_label(sidebar_frame, "◆ OMEGA TERMINAL ◆", style="Header.TLabel").pack(pady=(0, 30), anchor="w")
+        self.create_neon_label(sidebar_frame, "◆ PRO BY TESTING ◆", style="Header.TLabel").pack(pady=(0, 30), anchor="w")
         self.create_neon_label(sidebar_frame, "► NAVIGATION", style="Section.TLabel").pack(anchor="w", pady=(0, 16))
 
         self.create_sidebar_button(sidebar_frame, "📊 Overview", self.show_dashboard).pack(fill="x", pady=10)
         self.create_sidebar_button(sidebar_frame, "📝 Master Data", self.show_student_database).pack(fill="x", pady=10)
         self.create_sidebar_button(sidebar_frame, "📈 Analytics", self.show_statistics_analysis).pack(fill="x", pady=10)
-        self.create_sidebar_button(sidebar_frame, "📋 Activity Log", self.show_activity_log).pack(fill="x", pady=10)
         self.create_sidebar_button(sidebar_frame, "💾 Export Report", self.show_export_dialog).pack(fill="x", pady=10)
         
         ttk.Separator(sidebar_frame, orient="horizontal").pack(fill="x", pady=20)
@@ -502,9 +476,10 @@ class OmegaTerminalApp:
         score_entry.pack(anchor="w", pady=(0, 12))
         self.form_score.trace("w", lambda *args: self.validate_score_input(score_entry, self.form_score))
         
-        # Status field
-        self.create_neon_label(form_frame, "Status:", style="TLabel").pack(anchor="w", pady=(10, 4))
-        ttk.Entry(form_frame, textvariable=self.form_status, font=("Courier New", 11), width=35).pack(anchor="w", pady=(0, 20))
+        # Status field (read-only, auto-calculated)
+        self.create_neon_label(form_frame, "Status (Auto):", style="TLabel").pack(anchor="w", pady=(10, 4))
+        status_entry = ttk.Entry(form_frame, textvariable=self.form_status, font=("Courier New", 11), width=35, state="readonly")
+        status_entry.pack(anchor="w", pady=(0, 20))
 
         # Form buttons
         button_area = ttk.Frame(form_frame)
@@ -567,17 +542,22 @@ class OmegaTerminalApp:
         self.form_name.set(values[0])
         self.form_class.set(values[1])
         self.form_score.set(values[2])
-        self.form_status.set(values[3])
+        # Status is auto-calculated based on score, so we don't set it from table
+        try:
+            score = float(values[2])
+            status = "Pass" if score >= self.pass_threshold else "Fail"
+            self.form_status.set(status)
+        except (ValueError, IndexError):
+            self.form_status.set("Unknown")
 
     def add_record_from_form(self):
         """Validate the student input form and add a new record."""
         name = self.form_name.get().strip()
         class_name = self.form_class.get().strip()
         score_text = self.form_score.get().strip()
-        status = self.form_status.get().strip()
 
-        if not name or not class_name or not score_text or not status:
-            messagebox.showwarning("Incomplete Data", "All fields are required to add a new record.")
+        if not name or not class_name or not score_text:
+            messagebox.showwarning("Incomplete Data", "Name, class, and score are required to add a new record.")
             return
 
         try:
@@ -588,6 +568,9 @@ class OmegaTerminalApp:
         except ValueError:
             messagebox.showwarning("Invalid Score", "Score must be a valid number.")
             return
+
+        # Auto-determine status based on score
+        status = "Pass" if score >= self.pass_threshold else "Fail"
 
         record = {"Name": name, "Class": class_name, "Score": score, "Status": status}
         self.add_student_record(record)
@@ -604,10 +587,9 @@ class OmegaTerminalApp:
         name = self.form_name.get().strip()
         class_name = self.form_class.get().strip()
         score_text = self.form_score.get().strip()
-        status = self.form_status.get().strip()
 
-        if not name or not class_name or not score_text or not status:
-            messagebox.showwarning("Incomplete Data", "All fields are required to update the record.")
+        if not name or not class_name or not score_text:
+            messagebox.showwarning("Incomplete Data", "Name, class, and score are required to update the record.")
             return
 
         try:
@@ -618,6 +600,9 @@ class OmegaTerminalApp:
         except ValueError:
             messagebox.showwarning("Invalid Score", "Score must be a valid number.")
             return
+
+        # Auto-determine status based on score
+        status = "Pass" if score >= self.pass_threshold else "Fail"
 
         updated_record = {"Name": name, "Class": class_name, "Score": score, "Status": status}
         self.update_student_record(index, updated_record)
@@ -762,38 +747,6 @@ class OmegaTerminalApp:
         }
 
     # ----------------------------------------------------------------------
-    # Activity Log
-    # ----------------------------------------------------------------------
-    def show_activity_log(self):
-        """Display the system activity log."""
-        self.clear_content_area()
-        self.current_page = "ActivityLog"
-
-        header = self.create_neon_label(self.content_frame, "▶ ACTIVITY LOG ◀", style="Header.TLabel")
-        header.pack(anchor="w", pady=(0, 20))
-
-        subtitle = self.create_neon_label(self.content_frame, f"Total Activities: {len(self.activity_log)}", style="TLabel")
-        subtitle.pack(anchor="w", pady=(0, 20))
-
-        # Create activity log table
-        columns = ("Timestamp", "Action", "Details")
-        table = ttk.Treeview(self.content_frame, columns=columns, show="headings", selectmode="none", height=20)
-        table.pack(fill="both", expand=True)
-
-        for column in columns:
-            table.heading(column, text=column)
-            width = 200 if column == "Details" else 150
-            table.column(column, anchor="w", width=width)
-
-        # Display activities in reverse order (newest first)
-        for activity in reversed(self.activity_log):
-            table.insert("", "end", values=(
-                activity.get("timestamp", "N/A"),
-                activity.get("action", "N/A"),
-                activity.get("details", "")
-            ))
-
-    # ----------------------------------------------------------------------
     # Export Functionality
     # ----------------------------------------------------------------------
     def show_export_dialog(self):
@@ -807,7 +760,7 @@ class OmegaTerminalApp:
 
         ttk.Button(export_window, text="[ 📄 Export as PDF ]", command=self.export_to_pdf).pack(fill="x", padx=20, pady=10)
         ttk.Button(export_window, text="[ 📊 Export as JSON ]", command=self.export_to_json).pack(fill="x", padx=20, pady=10)
-        ttk.Button(export_window, text="[ 📋 Export Activity Log ]", command=self.export_activity_log).pack(fill="x", padx=20, pady=10)
+
         ttk.Button(export_window, text="[ ✕ Close ]", command=export_window.destroy).pack(fill="x", padx=20, pady=10)
 
     def export_to_pdf(self):
@@ -882,7 +835,6 @@ class OmegaTerminalApp:
             elements.append(table)
 
             doc.build(elements)
-            self.log_activity("Export", f"PDF exported to {filename}")
             messagebox.showinfo("Export Success", f"Report exported successfully!\n\nFile: {filename}")
             self.show_notification(f"✓ PDF exported: {filename}")
 
@@ -910,28 +862,11 @@ class OmegaTerminalApp:
             with filepath.open("w", encoding="utf-8") as f:
                 json.dump(export_data, f, indent=4)
 
-            self.log_activity("Export", f"JSON exported to {filename}")
             messagebox.showinfo("Export Success", f"Data exported successfully!\n\nFile: {filename}")
             self.show_notification(f"✓ JSON exported: {filename}")
 
         except Exception as e:
             messagebox.showerror("Export Error", f"Failed to export JSON:\n{str(e)}")
-
-    def export_activity_log(self):
-        """Export activity log to JSON file."""
-        try:
-            filename = f"activity_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            filepath = self.database_path.parent / filename
-
-            with filepath.open("w", encoding="utf-8") as f:
-                json.dump(self.activity_log, f, indent=4)
-
-            self.log_activity("Export", f"Activity log exported to {filename}")
-            messagebox.showinfo("Export Success", f"Activity log exported successfully!\n\nFile: {filename}")
-            self.show_notification(f"✓ Activity log exported: {filename}")
-
-        except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export activity log:\n{str(e)}")
 
     # ----------------------------------------------------------------------
     # Internal UI Helpers
@@ -948,20 +883,8 @@ class OmegaTerminalApp:
         elif self.current_page == "Overview":
             self.show_dashboard()
 
-    def bind_table_selection(self, event):
-        """Populate form fields with the selected student record for editing."""
-        selected = self.student_table.focus()
-        if not selected:
-            return
-
-        values = self.student_table.item(selected, "values")
-        self.form_name.set(values[0])
-        self.form_class.set(values[1])
-        self.form_score.set(values[2])
-        self.form_status.set(values[3])
-
 
 if __name__ == "__main__":
     root = tk.Tk()
-    app = OmegaTerminalApp(root)
+    app = ProTestingApp(root)
     root.mainloop()
