@@ -38,5 +38,20 @@
         "timestamp": "2026-04-18 10:18:32",
         "action": "Export",
         "details": "Activity log exported to activity_log_20260418_101832.json"
+    },
+    {
+        "timestamp": "2026-04-18 10:21:30",
+        "action": "Login",
+        "details": "User 'tes' logged in"
+    },
+    {
+        "timestamp": "2026-04-18 10:28:41",
+        "action": "Login",
+        "details": "User 'tes' logged in"
+    },
+    {
+        "timestamp": "2026-04-18 10:30:55",
+        "action": "Login",
+        "details": "User 'tes' logged in"
     }
 ]
