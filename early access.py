@@ -112,18 +112,6 @@ class ProTestingApp:
             self.student_data = []
             self.save_database()
 
-    def load_activity_log(self):
-        """Load activity log from JSON file."""
-        if not self.activity_log_path.exists():
-            self.activity_log = []
-            return
-
-        try:
-            with self.activity_log_path.open("r", encoding="utf-8") as file:
-                self.activity_log = json.load(file)
-        except (json.JSONDecodeError, IOError):
-            self.activity_log = []
-
     def save_database(self):
         """Write the current list of student records back to the JSON database file."""
         with self.database_path.open("w", encoding="utf-8") as file:
