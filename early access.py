@@ -151,20 +151,26 @@ class ProTestingApp:
         style = ttk.Style(self.root)
         style.theme_use("clam")
 
-        # Color scheme
+        # Color scheme with contextual palette
         onyx_black = "#0a0a0a"
         dark_bg = "#0f0f0f"
-        phosphor_green = "#00ff41"
-        bright_green = "#00ff80"
+        phosphor_green = "#00ff41"  # Neon green (brand only)
+        bright_green = "#00ff80"    # Bright green (brand headers)
         accent_gray = "#1a1a1a"
         border_gray = "#2a2a2a"
+        cyan_accent = "#00BFFF"     # Cyan for section headers
+        silver_text = "#C0C0C0"     # Silver for regular labels
+        gold_text = "#FFD700"       # Gold for active status records
+        white_text = "#FFFFFF"      # White for table names
+        light_blue = "#87CEEB"      # Light blue for table classes
+        yellow_text = "#FFFF00"     # Yellow for table scores
 
         # Frame styles
         style.configure("TFrame", background=onyx_black)
         style.configure("Card.TFrame", background=accent_gray, relief="flat", borderwidth=1)
         
-        # Label styles with glow effects
-        style.configure("TLabel", background=onyx_black, foreground=phosphor_green, font=("Courier New", 10))
+        # Label styles with contextual colors
+        style.configure("TLabel", background=onyx_black, foreground=silver_text, font=("Courier New", 10))
         style.configure("Header.TLabel", 
                        font=("Courier New", 20, "bold"), 
                        foreground=bright_green,
@@ -175,51 +181,52 @@ class ProTestingApp:
                        background=onyx_black)
         style.configure("Section.TLabel", 
                        font=("Courier New", 13, "bold"), 
-                       foreground=bright_green,
+                       foreground=cyan_accent,
                        background=accent_gray)
         style.configure("Stat.TLabel",
                        font=("Courier New", 11),
-                       foreground=phosphor_green,
+                       foreground=silver_text,
                        background=accent_gray)
         
         # Button styles with rounded appearance
         style.configure("TButton",
                        background=accent_gray,
-                       foreground=phosphor_green,
+                       foreground=silver_text,
                        font=("Courier New", 10),
                        relief="solid",
                        borderwidth=1,
                        focuscolor="none",
                        padding=8)
         style.map("TButton",
-                 background=[("active", border_gray), ("pressed", phosphor_green)],
-                 foreground=[("active", bright_green), ("pressed", onyx_black)])
+                 background=[("active", border_gray), ("pressed", gold_text)],
+                 foreground=[("active", gold_text), ("pressed", onyx_black)])
         
-        # Entry styles
+        # Entry styles with rounded appearance simulation
         style.configure("TEntry",
                        font=("Courier New", 10),
                        fieldbackground=dark_bg,
-                       foreground=phosphor_green,
+                       foreground=silver_text,
                        borderwidth=1,
-                       relief="solid")
+                       relief="solid",
+                       padding=4)
         
-        # Treeview styles
+        # Treeview styles with colorful text
         style.configure("Treeview",
                        background=dark_bg,
                        fieldbackground=dark_bg,
-                       foreground=phosphor_green,
+                       foreground=white_text,  # Table data in white
                        rowheight=28,
                        bordercolor=border_gray,
                        borderwidth=1,
                        font=("Courier New", 9))
         style.configure("Treeview.Heading",
                        background=accent_gray,
-                       foreground=bright_green,
+                       foreground=cyan_accent,  # Headings in cyan
                        font=("Courier New", 10, "bold"),
                        borderwidth=1)
         style.map("Treeview",
                  background=[("selected", "#1a4d1a")],
-                 foreground=[("selected", "#ffffff")])
+                 foreground=[("selected", gold_text)])
         
         # Separator styles
         style.configure("TSeparator", background=border_gray)
@@ -366,6 +373,21 @@ class ProTestingApp:
         self.sidebar_frame = sidebar_frame
         self.content_frame = content_frame
 
+        # Try to load and display logo image if available
+        logo_path = Path(__file__).with_name("logo_apk.png")
+        if logo_path.exists():
+            try:
+                logo_image = tk.PhotoImage(file=str(logo_path))
+                # Set as window icon
+                self.root.iconphoto(False, logo_image)
+                
+                # Display logo in sidebar
+                logo_label = tk.Label(sidebar_frame, image=logo_image, bg="#0a0a0a")
+                logo_label.image = logo_image  # Keep a reference to prevent garbage collection
+                logo_label.pack(pady=(0, 20))
+            except Exception as e:
+                print(f"Warning: Could not load logo image: {e}")
+
         self.create_neon_label(sidebar_frame, "  early access  ", style="Header.TLabel").pack(pady=(0, 30), anchor="w")
         self.create_neon_label(sidebar_frame, "► NAVIGATION", style="Section.TLabel").pack(anchor="w", pady=(0, 16))
 
@@ -376,12 +398,18 @@ class ProTestingApp:
         
         ttk.Separator(sidebar_frame, orient="horizontal").pack(fill="x", pady=20)
         self.create_neon_label(sidebar_frame, "► STATUS", style="Section.TLabel").pack(anchor="w", pady=(0, 10))
-        self.create_neon_label(sidebar_frame, f"Records: {len(self.student_data)}", style="TLabel").pack(anchor="w", pady=4)
+        
+        # Records status with contextual color (Gold if records exist, Gray if empty)
+        record_count = len(self.student_data)
+        record_color = "#FFD700" if record_count > 0 else "#808080"  # Gold or Gray
+        records_label = tk.Label(sidebar_frame, text=f"Records: {record_count}", 
+                               font=("Courier New", 10), fg=record_color, bg="#0a0a0a")
+        records_label.pack(anchor="w", pady=4)
 
-        # Add WIB Clock in bottom right corner
+        # Add WIB Clock in bottom right corner with bold white text
         self.clock_label = tk.Label(self.root, text="🕐 00:00:00", 
                                    font=("Courier New", 10, "bold"),
-                                   fg="#00ff41", bg="#0a0a0a")
+                                   fg="#FFFFFF", bg="#0a0a0a")
         self.clock_label.place(relx=0.98, rely=0.98, anchor="se", padx=10, pady=10)
         self.update_clock()
 
@@ -482,33 +510,16 @@ class ProTestingApp:
         self.create_neon_label(form_frame, "Class:", style="TLabel").pack(anchor="w", pady=(10, 4))
         ttk.Entry(form_frame, textvariable=self.form_class, font=("Courier New", 11), width=35).pack(anchor="w", pady=(0, 12))
         
-        # Score field  with custom colors
-        button_area = tk.Frame(form_frame, bg="#0a0a0a")
-        button_area.pack(fill="x", pady=(20, 0))
+        # Score field
+        self.create_neon_label(form_frame, "Score:", style="TLabel").pack(anchor="w", pady=(10, 4))
+        ttk.Entry(form_frame, textvariable=self.form_score, font=("Courier New", 11), width=35).pack(anchor="w", pady=(0, 12))
         
-        # ADD button - Blue
-        add_btn = tk.Button(button_area, text="[ + ADD ]", command=self.add_record_from_form,
-                           bg="#0000FF", fg="#FFFFFF", font=("Courier New", 9, "bold"),
-                           relief="raised", borderwidth=2, padx=10, pady=5, activebackground="#0055FF")
-        add_btn.pack(side="left", padx=5)
-        
-        # UPDATE button - Green
-        update_btn = tk.Button(button_area, text="[ ✏ UPDATE ]", command=self.update_selected_record,
-                              bg="#00AA00", fg="#FFFFFF", font=("Courier New", 9, "bold"),
-                              relief="raised", borderwidth=2, padx=10, pady=5, activebackground="#00DD00")
-        update_btn.pack(side="left", padx=5)
-        
-        # DELETE button - Dark Red
-        delete_btn = tk.Button(button_area, text="[ ✕ DELETE ]", command=self.delete_selected_record,
-                              bg="#8B0000", fg="#FFFFFF", font=("Courier New", 9, "bold"),
-                              relief="raised", borderwidth=2, padx=10, pady=5, activebackground="#CC0000")
-        delete_btn
         # Status field
         self.create_neon_label(form_frame, "Status:", style="TLabel").pack(anchor="w", pady=(10, 4))
         status_entry = ttk.Entry(form_frame, textvariable=self.form_status, font=("Courier New", 11), width=35, state="readonly")
         status_entry.pack(anchor="w", pady=(0, 20))
 
-        # Form buttons with custom colors
+        # Form buttons with custom colors (ONE clean set)
         button_area = tk.Frame(form_frame, bg="#0a0a0a")
         button_area.pack(fill="x", pady=(20, 0))
         
@@ -808,10 +819,10 @@ class ProTestingApp:
     # Download Functionality
     # ----------------------------------------------------------------------
     def show_download_dialog(self):
-        """Show download options dialog with modern styling."""
+        """Show download options dialog with modern polished styling."""
         download_window = Toplevel(self.root)
         download_window.title("Download Options")
-        download_window.geometry("450x350")
+        download_window.geometry("480x380")
         download_window.configure(bg="#0a0a0a")
         download_window.resizable(False, False)
         
@@ -823,37 +834,39 @@ class ProTestingApp:
         main_frame = ttk.Frame(download_window, padding=(30, 30, 30, 30))
         main_frame.pack(fill="both", expand=True)
         
-        # Title
+        # Title with cyan color
         title_label = tk.Label(main_frame, text="▶ DOWNLOAD OPTIONS ◀", 
                               font=("Courier New", 16, "bold"), 
-                              fg="#00ff80", bg="#0a0a0a")
-        title_label.pack(pady=(0, 30), anchor="w")
+                              fg="#00BFFF", bg="#0a0a0a")
+        title_label.pack(pady=(0, 30), anchor="center")
         
-        # Description
-        desc_label = tk.Label(main_frame, text="Choose a file format to download:",
+        # Description with silver color
+        desc_label = tk.Label(main_frame, text="Choose a file format to export student data:",
                              font=("Courier New", 10), 
-                             fg="#00ff41", bg="#0a0a0a")
-        desc_label.pack(pady=(0, 25), anchor="w")
+                             fg="#C0C0C0", bg="#0a0a0a")
+        desc_label.pack(pady=(0, 25), anchor="center")
         
         # Buttons frame - centered and symmetrical
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill="x", pady=(0, 20))
         
-        # PDF Button (Red)
+        # PDF Button (Red with icon)
         pdf_btn = tk.Button(button_frame, text="📄 PDF", command=self.download_pdf,
                            font=("Courier New", 11, "bold"), 
                            fg="#ffffff", bg="#cc0000",
-                           padx=25, pady=12, relief="solid", borderwidth=2)
+                           padx=30, pady=12, relief="raised", borderwidth=2,
+                           activebackground="#ff3333", activeforeground="#ffffff")
         pdf_btn.pack(side="left", padx=10, expand=True, fill="x")
         
-        # Excel Button (Excel Green)
+        # Excel Button (Excel Green with icon)
         excel_btn = tk.Button(button_frame, text="📊 EXCEL", command=self.download_excel,
                              font=("Courier New", 11, "bold"), 
                              fg="#ffffff", bg="#70ad47",
-                             padx=25, pady=12, relief="solid", borderwidth=2)
+                             padx=30, pady=12, relief="raised", borderwidth=2,
+                             activebackground="#90dd67", activeforeground="#ffffff")
         excel_btn.pack(side="left", padx=10, expand=True, fill="x")
         
-        # Close button
+        # Close button with separator
         ttk.Separator(main_frame, orient="horizontal").pack(fill="x", pady=15)
         close_btn = ttk.Button(main_frame, text="[ ✕ Close ]", command=download_window.destroy)
         close_btn.pack(fill="x", pady=(0, 0))
