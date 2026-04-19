@@ -380,7 +380,7 @@ class ProTestingApp:
         self.show_dashboard()
 
     # ----------------------------------------------------------------------
-    # Overview Page (Dashboard)
+    # Overview Page
     # ----------------------------------------------------------------------
     def show_dashboard(self):
         """Render the dashboard summary page with prominent visual cards and icons."""
@@ -425,7 +425,7 @@ class ProTestingApp:
             value_widget = self.create_neon_label(card, value, style="Stat.TLabel")
             value_widget.pack(anchor="w", font=("Courier New", 18, "bold"), foreground="#00ff80")
 
-        # Student Table Section
+        # Student Table
         table_frame = ttk.Frame(main_container, padding=(0, 0, 0, 0))
         table_frame.pack(fill="both", expand=True, pady=(20, 0))
 
@@ -433,7 +433,7 @@ class ProTestingApp:
         self.create_student_table(table_frame)
 
     # ----------------------------------------------------------------------
-    # Records Page (Master Data)
+    # Records Page
     # ----------------------------------------------------------------------
     def show_student_database(self):
         """Render the student database management page with form beside table."""
@@ -460,10 +460,10 @@ class ProTestingApp:
         form_frame.pack(side="left", fill="both", padx=(0, 20))
         form_frame.pack_propagate(False)
 
-        self.create_neon_label(form_frame, "✏️ Student Record Data", style="Section.TLabel").pack(anchor="w", pady=(0, 20))
+        self.create_neon_label(form_frame, "✏️Student Record Data", style="Section.TLabel").pack(anchor="w", pady=(0, 20))
         
         # Name field
-        self.create_neon_label(form_frame, "Name:", style="TLabel").pack(anchor="w", pady=(10, 4))
+        self.create_neon_label(form_frame, "Nama:", style="TLabel").pack(anchor="w", pady=(10, 4))
         ttk.Entry(form_frame, textvariable=self.form_name, font=("Courier New", 11), width=35).pack(anchor="w", pady=(0, 12))
         
         # Class field
@@ -471,13 +471,13 @@ class ProTestingApp:
         ttk.Entry(form_frame, textvariable=self.form_class, font=("Courier New", 11), width=35).pack(anchor="w", pady=(0, 12))
         
         # Score field with validation
-        self.create_neon_label(form_frame, "Score (0-100):", style="TLabel").pack(anchor="w", pady=(10, 4))
+        self.create_neon_label(form_frame, "Score:", style="TLabel").pack(anchor="w", pady=(10, 4))
         score_entry = ttk.Entry(form_frame, textvariable=self.form_score, font=("Courier New", 11), width=35)
         score_entry.pack(anchor="w", pady=(0, 12))
         self.form_score.trace("w", lambda *args: self.validate_score_input(score_entry, self.form_score))
         
-        # Status field (read-only, auto-calculated)
-        self.create_neon_label(form_frame, "Status (Auto):", style="TLabel").pack(anchor="w", pady=(10, 4))
+        # Status field
+        self.create_neon_label(form_frame, "Status:", style="TLabel").pack(anchor="w", pady=(10, 4))
         status_entry = ttk.Entry(form_frame, textvariable=self.form_status, font=("Courier New", 11), width=35, state="readonly")
         status_entry.pack(anchor="w", pady=(0, 20))
 
