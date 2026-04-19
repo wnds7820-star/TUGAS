@@ -378,7 +378,18 @@ class ProTestingApp:
         self.create_neon_label(sidebar_frame, "► STATUS", style="Section.TLabel").pack(anchor="w", pady=(0, 10))
         self.create_neon_label(sidebar_frame, f"Records: {len(self.student_data)}", style="TLabel").pack(anchor="w", pady=4)
 
+        # Add WIB Clock in bottom right corner
+        self.clock_label = tk.Label(self.root, text="🕐 00:00:00", 
+                                   font=("Courier New", 10, "bold"),
+                                   fg="#00ff41", bg="#0a0a0a")
+        self.clock_label.place(relx=0.98, rely=0.98, anchor="se", padx=10, pady=10)
+        self.update_clock()
+
         self.show_dashboard()
+        
+        # Apply fade-in animation to main window
+        self.root.attributes('-alpha', 0.0)
+        self.fade_in_window(self.root, duration=400)
 
     # ----------------------------------------------------------------------
     # Overview Page
@@ -471,23 +482,53 @@ class ProTestingApp:
         self.create_neon_label(form_frame, "Class:", style="TLabel").pack(anchor="w", pady=(10, 4))
         ttk.Entry(form_frame, textvariable=self.form_class, font=("Courier New", 11), width=35).pack(anchor="w", pady=(0, 12))
         
-        # Score field with validation
-        self.create_neon_label(form_frame, "Score:", style="TLabel").pack(anchor="w", pady=(10, 4))
-        score_entry = ttk.Entry(form_frame, textvariable=self.form_score, font=("Courier New", 11), width=35)
-        score_entry.pack(anchor="w", pady=(0, 12))
-        self.form_score.trace("w", lambda *args: self.validate_score_input(score_entry, self.form_score))
+        # Score field  with custom colors
+        button_area = tk.Frame(form_frame, bg="#0a0a0a")
+        button_area.pack(fill="x", pady=(20, 0))
         
+        # ADD button - Blue
+        add_btn = tk.Button(button_area, text="[ + ADD ]", command=self.add_record_from_form,
+                           bg="#0000FF", fg="#FFFFFF", font=("Courier New", 9, "bold"),
+                           relief="raised", borderwidth=2, padx=10, pady=5, activebackground="#0055FF")
+        add_btn.pack(side="left", padx=5)
+        
+        # UPDATE button - Green
+        update_btn = tk.Button(button_area, text="[ ✏ UPDATE ]", command=self.update_selected_record,
+                              bg="#00AA00", fg="#FFFFFF", font=("Courier New", 9, "bold"),
+                              relief="raised", borderwidth=2, padx=10, pady=5, activebackground="#00DD00")
+        update_btn.pack(side="left", padx=5)
+        
+        # DELETE button - Dark Red
+        delete_btn = tk.Button(button_area, text="[ ✕ DELETE ]", command=self.delete_selected_record,
+                              bg="#8B0000", fg="#FFFFFF", font=("Courier New", 9, "bold"),
+                              relief="raised", borderwidth=2, padx=10, pady=5, activebackground="#CC0000")
+        delete_btn
         # Status field
         self.create_neon_label(form_frame, "Status:", style="TLabel").pack(anchor="w", pady=(10, 4))
         status_entry = ttk.Entry(form_frame, textvariable=self.form_status, font=("Courier New", 11), width=35, state="readonly")
         status_entry.pack(anchor="w", pady=(0, 20))
 
-        # Form buttons
-        button_area = ttk.Frame(form_frame)
+        # Form buttons with custom colors
+        button_area = tk.Frame(form_frame, bg="#0a0a0a")
         button_area.pack(fill="x", pady=(20, 0))
-        ttk.Button(button_area, text="[ + ADD ]", command=self.add_record_from_form).pack(side="left", padx=5)
-        ttk.Button(button_area, text="[ ✏ UPDATE ]", command=self.update_selected_record).pack(side="left", padx=5)
-        ttk.Button(button_area, text="[ ✕ DELETE ]", command=self.delete_selected_record).pack(side="left", padx=5)
+        
+        # ADD button - Blue
+        add_btn = tk.Button(button_area, text="[ + ADD ]", command=self.add_record_from_form,
+                           bg="#0000FF", fg="#FFFFFF", font=("Courier New", 9, "bold"),
+                           relief="raised", borderwidth=2, padx=10, pady=5, activebackground="#0055FF")
+        add_btn.pack(side="left", padx=5)
+        
+        # UPDATE button - Green
+        update_btn = tk.Button(button_area, text="[ ✏ UPDATE ]", command=self.update_selected_record,
+                              bg="#00AA00", fg="#FFFFFF", font=("Courier New", 9, "bold"),
+                              relief="raised", borderwidth=2, padx=10, pady=5, activebackground="#00DD00")
+        update_btn.pack(side="left", padx=5)
+        
+        # DELETE button - Dark Red
+        delete_btn = tk.Button(button_area, text="[ ✕ DELETE ]", command=self.delete_selected_record,
+                              bg="#8B0000", fg="#FFFFFF", font=("Courier New", 9, "bold"),
+                              relief="raised", borderwidth=2, padx=10, pady=5, activebackground="#CC0000")
+        delete_btn.pack(side="left", padx=5)
 
         # Table on the right
         table_frame = ttk.Frame(main_layout, padding=(16, 0, 0, 0))
@@ -514,10 +555,16 @@ class ProTestingApp:
         style = ttk.Style()
         style.configure("Treeview.Heading", background="#1a1a1a", foreground="#00ff80", font=("Courier New", 10, "bold"))
         
-        # Configure tags for diverse text colors in cells
-        # Note: Since Treeview doesn't support per-cell foreground colors easily, 
-        # we'll use a workaround with Canvas overlay or use alternative approach
-        # For now, we'll add visual distinction via row tags
+        # Configure Treeview with enhanced styling
+        style.configure("Treeview",
+                       background="#0a0a0a",
+                       fieldbackground="#0f0f0f",
+                       foreground="#00ff41",
+                       rowheight=28,
+                       borderwidth=1)
+        style.map("Treeview",
+                 background=[("selected", "#1a4d1a")],
+                 foreground=[("selected", "#ffffff")])
 
         self.refresh_student_table()
         self.student_table.bind("<ButtonRelease-1>", self.bind_table_selection)
@@ -810,6 +857,10 @@ class ProTestingApp:
         ttk.Separator(main_frame, orient="horizontal").pack(fill="x", pady=15)
         close_btn = ttk.Button(main_frame, text="[ ✕ Close ]", command=download_window.destroy)
         close_btn.pack(fill="x", pady=(0, 0))
+        
+        # Apply fade-in animation to popup
+        download_window.attributes('-alpha', 0.0)
+        self.fade_in_window(download_window, duration=300)
 
 
     def download_pdf(self):
@@ -830,10 +881,15 @@ class ProTestingApp:
                 initialfile=f"student_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
             )
             
-            if not filepath:  # User cancelled
+            if not filepath:
                 return
-
-            doc = SimpleDocTemplate(filepath, pagesize=letter)
+            
+            from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+            from reportlab.lib.units import inch
+            from reportlab.lib import colors
+            from reportlab.pdfgen import canvas
+            
             elements = []
 
             # Title
@@ -860,10 +916,11 @@ class ProTestingApp:
                 fontName="Courier"
             )
             avg = self.calculate_average()
+            avg_text = f"{avg:.2f}" if avg is not None else "N/A"
             summary_text = f"""
             <b>Report Generated:</b> {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}<br/>
             <b>Total Students:</b> {len(self.student_data)}<br/>
-            <b>Average Score:</b> {avg:.2f if avg else 'N/A'}<br/>
+            <b>Average Score:</b> {avg_text}<br/>
             <b>Highest Score:</b> {self.calculate_highest() or 'N/A'}<br/>
             <b>Lowest Score:</b> {self.calculate_lowest() or 'N/A'}
             """
@@ -880,43 +937,33 @@ class ProTestingApp:
                     record["Status"]
                 ])
 
-            table = Table(data)
+            # Create table with styling
+            table = Table(data, colWidths=[1.8*inch, 1.2*inch, 1.0*inch, 1.0*inch])
             table.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#cc0000")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#ffffff")),
-                ("ALIGN", (0, 0), (-1, -1), "CENTER"),
-                ("FONTNAME", (0, 0), (-1, 0), "Courier-Bold"),
-                ("FONTSIZE", (0, 0), (-1, 0), 12),
-                ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-                ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f5f5f5")),
-                ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#333333")),
-                ("FONTNAME", (0, 1), (-1, -1), "Courier"),
-                ("FONTSIZE", (0, 1), (-1, -1), 10),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.HexColor("#ffffff"), colors.HexColor("#f5f5f5")]),
-                ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#cccccc")),
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("TOPPADDING", (0, 1), (-1, -1), 8),
-                ("BOTTOMPADDING", (0, 1), (-1, -1), 8),
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#cc0000")),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Courier-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 11),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
             ]))
             elements.append(table)
 
+            # Generate PDF
+            doc = SimpleDocTemplate(str(filepath), pagesize=(8.5*inch, 11*inch))
             doc.build(elements)
-            messagebox.showinfo("Download Success", f"PDF downloaded successfully!\n\nFile saved to:\n{filepath}")
+
+            messagebox.showinfo("Download Success", f"PDF file downloaded successfully!\n\nFile saved to:\n{filepath}")
             self.show_notification("✓ PDF downloaded successfully!")
 
         except Exception as e:
             messagebox.showerror("Download Error", f"Failed to download PDF:\n{str(e)}")
 
     def download_excel(self):
-        """Download student records to Excel file with auto-adjusted columns."""
-        # Check if we have pandas or openpyxl
-        if not PANDAS_AVAILABLE and not OPENPYXL_AVAILABLE:
-            messagebox.showerror("Download Error", 
-                               "Excel export requires pandas or openpyxl.\n\n"
-                               "Install with:\n"
-                               "pip install pandas openpyxl")
-            return
-
+        """Download student records to Excel file (with fallback to CSV format)."""
         if not self.student_data:
             messagebox.showwarning("No Data", "There are no student records to download.")
             return
@@ -925,22 +972,18 @@ class ProTestingApp:
             # Ask user for save location
             filepath = filedialog.asksaveasfilename(
                 defaultextension=".xlsx",
-                filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
+                filetypes=[("Excel files", "*.xlsx"), ("CSV files", "*.csv"), ("All files", "*.*")],
                 initialfile=f"student_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
             )
             
             if not filepath:  # User cancelled
                 return
 
-            # Use pandas if available (simpler), otherwise use openpyxl
+            # Try pandas/openpyxl first if available
             if PANDAS_AVAILABLE:
                 df = pd.DataFrame(self.student_data)
-                
-                # Write to Excel with pandas
                 with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
                     df.to_excel(writer, sheet_name='Students', index=False)
-                    
-                    # Auto-adjust column widths
                     worksheet = writer.sheets['Students']
                     for column in worksheet.columns:
                         max_length = 0
@@ -953,46 +996,41 @@ class ProTestingApp:
                                 pass
                         adjusted_width = min(max_length + 3, 50)
                         worksheet.column_dimensions[column_letter].width = adjusted_width
-            else:
-                # Use openpyxl directly
+            elif OPENPYXL_AVAILABLE:
                 wb = Workbook()
                 ws = wb.active
                 ws.title = "Students"
-                
-                # Headers
                 headers = ["Name", "Class", "Score", "Status"]
                 ws.append(headers)
-                
-                # Style headers
                 header_fill = PatternFill(start_color="70ad47", end_color="70ad47", fill_type="solid")
                 header_font = Font(bold=True, color="ffffff", size=11)
-                
                 for cell in ws[1]:
                     cell.fill = header_fill
                     cell.font = header_font
                     cell.alignment = Alignment(horizontal="center", vertical="center")
-                
-                # Add data rows
                 for record in self.student_data:
                     ws.append([record["Name"], record["Class"], record["Score"], record["Status"]])
-                
-                # Auto-adjust column widths
                 column_widths = {"A": 20, "B": 12, "C": 10, "D": 10}
                 for col_letter, width in column_widths.items():
                     ws.column_dimensions[col_letter].width = width
-                
-                # Center align data
                 for row in ws.iter_rows(min_row=2, max_row=len(self.student_data) + 1):
                     for cell in row:
                         cell.alignment = Alignment(horizontal="center", vertical="center")
-                
                 wb.save(filepath)
+            else:
+                # Fallback: Use CSV format (Excel can open .csv files)
+                import csv
+                with open(filepath, 'w', newline='', encoding='utf-8') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerow(["Name", "Class", "Score", "Status"])
+                    for record in self.student_data:
+                        writer.writerow([record["Name"], record["Class"], record["Score"], record["Status"]])
 
-            messagebox.showinfo("Download Success", f"Excel file downloaded successfully!\n\nFile saved to:\n{filepath}")
-            self.show_notification("✓ Excel file downloaded successfully!")
+            messagebox.showinfo("Download Success", f"File downloaded successfully!\n\nFile saved to:\n{filepath}")
+            self.show_notification("✓ File downloaded successfully!")
 
         except Exception as e:
-            messagebox.showerror("Download Error", f"Failed to download Excel:\n{str(e)}")
+            messagebox.showerror("Download Error", f"Failed to download file:\n{str(e)}")
 
     def export_to_json(self):
         """Export student records to JSON file."""
@@ -1024,6 +1062,56 @@ class ProTestingApp:
     # ----------------------------------------------------------------------
     # Internal UI Helpers
     # ----------------------------------------------------------------------
+    def get_wib_time(self):
+        """Get current time in WIB (Waktu Indonesia Barat - UTC+7)."""
+        import datetime as dt
+        wib_offset = dt.timedelta(hours=7)
+        wib_time = dt.datetime.now(dt.timezone.utc).astimezone(dt.timezone(wib_offset))
+        return wib_time.strftime("%H:%M:%S")
+
+    def update_clock(self):
+        """Update the WIB clock every second."""
+        if hasattr(self, 'clock_label') and self.clock_label.winfo_exists():
+            self.clock_label.config(text=f"\ud83d\udd50 {self.get_wib_time()}")
+            self.clock_after_id = self.root.after(1000, self.update_clock)
+
+    def fade_in_window(self, window, duration=500):
+        """Create a fade-in effect for a window."""
+        steps = 10
+        step_duration = duration // steps
+        alpha = 1.0 / steps
+        current_alpha = [0.0]
+        
+        def fade_step():
+            current_alpha[0] += alpha
+            if current_alpha[0] >= 0.95:
+                window.attributes('-alpha', 1.0)
+                return
+            window.attributes('-alpha', current_alpha[0])
+            self.root.after(step_duration, fade_step)
+        
+        window.attributes('-alpha', 0.0)
+        fade_step()
+
+    def fade_out_window(self, window, callback=None, duration=300):
+        """Create a fade-out effect for a window."""
+        steps = 8
+        step_duration = duration // steps
+        current_alpha = [1.0]
+        
+        def fade_step():
+            current_alpha[0] -= (1.0 / steps)
+            if current_alpha[0] <= 0.05:
+                window.attributes('-alpha', 0.0)
+                window.destroy()
+                if callback:
+                    callback()
+                return
+            window.attributes('-alpha', current_alpha[0])
+            self.root.after(step_duration, fade_step)
+        
+        fade_step()
+
     def clear_content_area(self):
         """Clear only the right-side content area while preserving the sidebar."""
         for widget in self.content_frame.winfo_children():
