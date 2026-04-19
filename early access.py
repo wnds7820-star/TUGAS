@@ -329,7 +329,7 @@ class ProTestingApp:
         auth_hint = ttk.Label(login_frame, text="» Default: tes / 1234", font=("Courier New", 9), foreground="#00ff41", background="#0a0a0a")
         auth_hint.grid(row=3, column=0, columnspan=2, pady=(20, 30))
 
-        login_button = ttk.Button(login_frame, text="[ ENTER SYSTEM ]", command=self.verify_login)
+        login_button = ttk.Button(login_frame, text="[ ENTER ]", command=self.verify_login)
         login_button.grid(row=4, column=0, columnspan=2, pady=10)
 
         username_entry.focus()
@@ -365,7 +365,7 @@ class ProTestingApp:
         self.sidebar_frame = sidebar_frame
         self.content_frame = content_frame
 
-        self.create_neon_label(sidebar_frame, "◆early access◆", style="Header.TLabel").pack(pady=(0, 30), anchor="w")
+        self.create_neon_label(sidebar_frame, "  early access  ", style="Header.TLabel").pack(pady=(0, 30), anchor="w")
         self.create_neon_label(sidebar_frame, "► NAVIGATION", style="Section.TLabel").pack(anchor="w", pady=(0, 16))
 
         self.create_sidebar_button(sidebar_frame, "📊 Overview", self.show_dashboard).pack(fill="x", pady=10)
@@ -394,7 +394,7 @@ class ProTestingApp:
         header = self.create_neon_label(main_container, "▶ DASHBOARD OVERVIEW ◀", style="Header.TLabel")
         header.pack(anchor="w", pady=(0, 20))
 
-        subtitle = self.create_neon_label(main_container, "Real-time student performance metrics", style="TLabel")
+        subtitle = self.create_neon_label(main_container, "Real-time student performance", style="TLabel")
         subtitle.pack(anchor="w", pady=(0, 30))
 
         # Statistics Cards with Icons
