@@ -1,7 +1,7 @@
 import json
 import statistics
 import tkinter as tk
-from tkinter import ttk, messagebox, StringVar, Canvas, Toplevel
+from tkinter import ttk, messagebox, StringVar, Canvas, Toplevel, filedialog
 from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
@@ -31,6 +31,19 @@ try:
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
+
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+
+try:
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    OPENPYXL_AVAILABLE = True
+except ImportError:
+    OPENPYXL_AVAILABLE = False
 
 
 class ProTestingApp:
@@ -371,7 +384,7 @@ class ProTestingApp:
         self.create_sidebar_button(sidebar_frame, "📊 Overview", self.show_dashboard).pack(fill="x", pady=10)
         self.create_sidebar_button(sidebar_frame, "📝 Master Data", self.show_student_database).pack(fill="x", pady=10)
         self.create_sidebar_button(sidebar_frame, "📈 Analytics", self.show_statistics_analysis).pack(fill="x", pady=10)
-        self.create_sidebar_button(sidebar_frame, "💾 Export Report", self.show_export_dialog).pack(fill="x", pady=10)
+        self.create_sidebar_button(sidebar_frame, "💾 Download Report", self.show_download_dialog).pack(fill="x", pady=10)
         
         ttk.Separator(sidebar_frame, orient="horizontal").pack(fill="x", pady=20)
         self.create_neon_label(sidebar_frame, "► STATUS", style="Section.TLabel").pack(anchor="w", pady=(0, 10))
@@ -496,7 +509,7 @@ class ProTestingApp:
         self.create_student_table(table_frame)
 
     def create_student_table(self, parent):
-        """Create or refresh a Treeview widget displaying student records."""
+        """Create or refresh a Treeview widget displaying student records with colorful text."""
         if hasattr(self, "student_table") and self.student_table.winfo_exists():
             self.student_table.destroy()
 
@@ -504,9 +517,19 @@ class ProTestingApp:
         self.student_table = ttk.Treeview(parent, columns=columns, show="headings", selectmode="browse", height=14)
         self.student_table.pack(fill="both", expand=True)
 
+        # Configure column headings
         for column in columns:
             self.student_table.heading(column, text=column)
             self.student_table.column(column, anchor="center", width=140)
+
+        # Define tags for different columns with custom colors
+        style = ttk.Style()
+        style.configure("Treeview.Heading", background="#1a1a1a", foreground="#00ff80", font=("Courier New", 10, "bold"))
+        
+        # Configure tags for diverse text colors in cells
+        # Note: Since Treeview doesn't support per-cell foreground colors easily, 
+        # we'll use a workaround with Canvas overlay or use alternative approach
+        # For now, we'll add visual distinction via row tags
 
         self.refresh_student_table()
         self.student_table.bind("<ButtonRelease-1>", self.bind_table_selection)
@@ -747,33 +770,82 @@ class ProTestingApp:
         }
 
     # ----------------------------------------------------------------------
-    # Export Functionality
+    # Download Functionality
     # ----------------------------------------------------------------------
-    def show_export_dialog(self):
-        """Show export options dialog."""
-        export_window = Toplevel(self.root)
-        export_window.title("Export Report")
-        export_window.geometry("400x300")
-        export_window.configure(bg="#0a0a0a")
+    def show_download_dialog(self):
+        """Show download options dialog with modern styling."""
+        download_window = Toplevel(self.root)
+        download_window.title("Download Options")
+        download_window.geometry("450x350")
+        download_window.configure(bg="#0a0a0a")
+        download_window.resizable(False, False)
+        
+        # Center the window
+        download_window.transient(self.root)
+        download_window.grab_set()
+        
+        # Main container with padding
+        main_frame = ttk.Frame(download_window, padding=(30, 30, 30, 30))
+        main_frame.pack(fill="both", expand=True)
+        
+        # Title
+        title_label = tk.Label(main_frame, text="▶ DOWNLOAD OPTIONS ◀", 
+                              font=("Courier New", 16, "bold"), 
+                              fg="#00ff80", bg="#0a0a0a")
+        title_label.pack(pady=(0, 30), anchor="w")
+        
+        # Description
+        desc_label = tk.Label(main_frame, text="Choose a file format to download:",
+                             font=("Courier New", 10), 
+                             fg="#00ff41", bg="#0a0a0a")
+        desc_label.pack(pady=(0, 25), anchor="w")
+        
+        # Buttons frame - centered and symmetrical
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(fill="x", pady=(0, 20))
+        
+        # PDF Button (Red)
+        pdf_btn = tk.Button(button_frame, text="📄 PDF", command=self.download_pdf,
+                           font=("Courier New", 11, "bold"), 
+                           fg="#ffffff", bg="#cc0000",
+                           padx=25, pady=12, relief="solid", borderwidth=2)
+        pdf_btn.pack(side="left", padx=10, expand=True, fill="x")
+        
+        # Excel Button (Excel Green)
+        excel_btn = tk.Button(button_frame, text="📊 EXCEL", command=self.download_excel,
+                             font=("Courier New", 11, "bold"), 
+                             fg="#ffffff", bg="#70ad47",
+                             padx=25, pady=12, relief="solid", borderwidth=2)
+        excel_btn.pack(side="left", padx=10, expand=True, fill="x")
+        
+        # Close button
+        ttk.Separator(main_frame, orient="horizontal").pack(fill="x", pady=15)
+        close_btn = ttk.Button(main_frame, text="[ ✕ Close ]", command=download_window.destroy)
+        close_btn.pack(fill="x", pady=(0, 0))
 
-        ttk.Label(export_window, text="▶ EXPORT OPTIONS ◀", style="Header.TLabel").pack(pady=20)
 
-        ttk.Button(export_window, text="[ 📄 Export as PDF ]", command=self.export_to_pdf).pack(fill="x", padx=20, pady=10)
-        ttk.Button(export_window, text="[ 📊 Export as JSON ]", command=self.export_to_json).pack(fill="x", padx=20, pady=10)
-
-        ttk.Button(export_window, text="[ ✕ Close ]", command=export_window.destroy).pack(fill="x", padx=20, pady=10)
-
-    def export_to_pdf(self):
-        """Export student records to PDF file."""
+    def download_pdf(self):
+        """Download student records to PDF file with file dialog."""
         if not REPORTLAB_AVAILABLE:
-            messagebox.showerror("Export Error", "ReportLab library not installed.\nInstall it with: pip install reportlab")
+            messagebox.showerror("Download Error", "ReportLab library not installed.\n\nInstall it with:\npip install reportlab")
+            return
+
+        if not self.student_data:
+            messagebox.showwarning("No Data", "There are no student records to download.")
             return
 
         try:
-            filename = f"student_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-            filepath = self.database_path.parent / filename
+            # Ask user for save location
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".pdf",
+                filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
+                initialfile=f"student_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            )
+            
+            if not filepath:  # User cancelled
+                return
 
-            doc = SimpleDocTemplate(str(filepath), pagesize=letter)
+            doc = SimpleDocTemplate(filepath, pagesize=letter)
             elements = []
 
             # Title
@@ -782,19 +854,22 @@ class ProTestingApp:
                 'CustomTitle',
                 parent=styles['Heading1'],
                 fontSize=24,
-                textColor=colors.HexColor("#00ff41"),
+                textColor=colors.HexColor("#cc0000"),
                 spaceAfter=30,
-                alignment=1
+                alignment=1,
+                fontName="Courier-Bold"
             )
-            elements.append(Paragraph("STUDENT GRADE REPORT", title_style))
+            elements.append(Paragraph("📄 STUDENT GRADE REPORT", title_style))
+            elements.append(Spacer(1, 12))
 
             # Summary section
             summary_style = ParagraphStyle(
                 'CustomNormal',
                 parent=styles['Normal'],
                 fontSize=11,
-                textColor=colors.HexColor("#00ff41"),
-                spaceAfter=12
+                textColor=colors.HexColor("#333333"),
+                spaceAfter=12,
+                fontName="Courier"
             )
             avg = self.calculate_average()
             summary_text = f"""
@@ -819,27 +894,117 @@ class ProTestingApp:
 
             table = Table(data)
             table.setStyle(TableStyle([
-                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1a1a1a")),
-                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#00ff41")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#cc0000")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.HexColor("#ffffff")),
                 ("ALIGN", (0, 0), (-1, -1), "CENTER"),
                 ("FONTNAME", (0, 0), (-1, 0), "Courier-Bold"),
                 ("FONTSIZE", (0, 0), (-1, 0), 12),
                 ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-                ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#0f0f0f")),
-                ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#00ff41")),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f5f5f5")),
+                ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#333333")),
                 ("FONTNAME", (0, 1), (-1, -1), "Courier"),
                 ("FONTSIZE", (0, 1), (-1, -1), 10),
-                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.HexColor("#0f0f0f"), colors.HexColor("#1a1a1a")]),
-                ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#333333")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.HexColor("#ffffff"), colors.HexColor("#f5f5f5")]),
+                ("GRID", (0, 0), (-1, -1), 1, colors.HexColor("#cccccc")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("TOPPADDING", (0, 1), (-1, -1), 8),
+                ("BOTTOMPADDING", (0, 1), (-1, -1), 8),
             ]))
             elements.append(table)
 
             doc.build(elements)
-            messagebox.showinfo("Export Success", f"Report exported successfully!\n\nFile: {filename}")
-            self.show_notification(f"✓ PDF exported: {filename}")
+            messagebox.showinfo("Download Success", f"PDF downloaded successfully!\n\nFile saved to:\n{filepath}")
+            self.show_notification("✓ PDF downloaded successfully!")
 
         except Exception as e:
-            messagebox.showerror("Export Error", f"Failed to export PDF:\n{str(e)}")
+            messagebox.showerror("Download Error", f"Failed to download PDF:\n{str(e)}")
+
+    def download_excel(self):
+        """Download student records to Excel file with auto-adjusted columns."""
+        # Check if we have pandas or openpyxl
+        if not PANDAS_AVAILABLE and not OPENPYXL_AVAILABLE:
+            messagebox.showerror("Download Error", 
+                               "Excel export requires pandas or openpyxl.\n\n"
+                               "Install with:\n"
+                               "pip install pandas openpyxl")
+            return
+
+        if not self.student_data:
+            messagebox.showwarning("No Data", "There are no student records to download.")
+            return
+
+        try:
+            # Ask user for save location
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
+                initialfile=f"student_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            )
+            
+            if not filepath:  # User cancelled
+                return
+
+            # Use pandas if available (simpler), otherwise use openpyxl
+            if PANDAS_AVAILABLE:
+                df = pd.DataFrame(self.student_data)
+                
+                # Write to Excel with pandas
+                with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
+                    df.to_excel(writer, sheet_name='Students', index=False)
+                    
+                    # Auto-adjust column widths
+                    worksheet = writer.sheets['Students']
+                    for column in worksheet.columns:
+                        max_length = 0
+                        column_letter = column[0].column_letter
+                        for cell in column:
+                            try:
+                                if len(str(cell.value)) > max_length:
+                                    max_length = len(str(cell.value))
+                            except:
+                                pass
+                        adjusted_width = min(max_length + 3, 50)
+                        worksheet.column_dimensions[column_letter].width = adjusted_width
+            else:
+                # Use openpyxl directly
+                wb = Workbook()
+                ws = wb.active
+                ws.title = "Students"
+                
+                # Headers
+                headers = ["Name", "Class", "Score", "Status"]
+                ws.append(headers)
+                
+                # Style headers
+                header_fill = PatternFill(start_color="70ad47", end_color="70ad47", fill_type="solid")
+                header_font = Font(bold=True, color="ffffff", size=11)
+                
+                for cell in ws[1]:
+                    cell.fill = header_fill
+                    cell.font = header_font
+                    cell.alignment = Alignment(horizontal="center", vertical="center")
+                
+                # Add data rows
+                for record in self.student_data:
+                    ws.append([record["Name"], record["Class"], record["Score"], record["Status"]])
+                
+                # Auto-adjust column widths
+                column_widths = {"A": 20, "B": 12, "C": 10, "D": 10}
+                for col_letter, width in column_widths.items():
+                    ws.column_dimensions[col_letter].width = width
+                
+                # Center align data
+                for row in ws.iter_rows(min_row=2, max_row=len(self.student_data) + 1):
+                    for cell in row:
+                        cell.alignment = Alignment(horizontal="center", vertical="center")
+                
+                wb.save(filepath)
+
+            messagebox.showinfo("Download Success", f"Excel file downloaded successfully!\n\nFile saved to:\n{filepath}")
+            self.show_notification("✓ Excel file downloaded successfully!")
+
+        except Exception as e:
+            messagebox.showerror("Download Error", f"Failed to download Excel:\n{str(e)}")
 
     def export_to_json(self):
         """Export student records to JSON file."""
