@@ -1,225 +1,227 @@
-import random
+import tkinter as tk
+from tkinter import ttk
+import urllib.parse
+import urllib.request
 import json
-import os
+import math
 
-# ===== DATA GAME =====
-SENJATA = {
-    "Keris": {"damage": 8, "harga": 0},
-    "Tombak": {"damage": 12, "harga": 50},
-    "Pedang Pusaka": {"damage": 18, "harga": 120}
+LANGUAGES = {
+    "Auto Detect": "auto",
+    "Indonesian": "id",
+    "English": "en",
+    "Japanese": "ja",
+    "Korean": "ko",
+    "French": "fr",
+    "German": "de",
+    "Spanish": "es",
+    "Arabic": "ar",
+    "Chinese (Simplified)": "zh-cn",
+    "Russian": "ru",
+    "Portuguese": "pt",
+    "Hindi": "hi",
 }
 
-MUSUH = [
-    {"nama": "Buto Ijo", "hp": 30, "damage": 6, "gold": 15, "exp": 20},
-    {"nama": "Leak Bali", "hp": 25, "damage": 8, "gold": 20, "exp": 25},
-    {"nama": "Siluman Ular", "hp": 40, "damage": 10, "gold": 35, "exp": 40},
-    {"nama": "Raksasa Penunggu Candi", "hp": 60, "damage": 14, "gold": 60, "exp": 70}
-]
+class APKTranslatorPro:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("APK Translator")
+        self.root.geometry("720x520")
+        self.root.configure(bg="#0f172a")
+        self.mode = "PC"
 
-# ===== CLASS PEMAIN =====
-class Pemain:
-    def __init__(self, nama):
-        self.nama = nama
-        self.level = 1
-        self.hp = 100
-        self.max_hp = 100
-        self.exp = 0
-        self.exp_untuk_levelup = 50
-        self.gold = 30
-        self.senjata = "Keris"
-        self.inventory = {"Ramuan": 2}
+        self.setup_style()
+        self.setup_ui()
+        self.fade_in()
 
-    def status(self):
-        print("\n=== STATUS ===")
-        print(f"Nama: {self.nama} | Level: {self.level}")
-        print(f"HP: {self.hp}/{self.max_hp} | EXP: {self.exp}/{self.exp_untuk_levelup}")
-        print(f"Gold: {self.gold} | Senjata: {self.senjata} (+{SENJATA[self.senjata]['damage']} dmg)")
-        print("Inventory:", self.inventory)
-        print("==============\n")
+    # ===== STYLE =====
+    def setup_style(self):
+        style = ttk.Style()
+        style.theme_use("default")
 
-    def pakai_ramuan(self):
-        if self.inventory.get("Ramuan", 0) > 0:
-            heal = 30
-            self.hp = min(self.max_hp, self.hp + heal)
-            self.inventory["Ramuan"] -= 1
-            print(f"Kamu minum ramuan. +{heal} HP. HP sekarang: {self.hp}/{self.max_hp}")
-            return True
-        else:
-            print("Ramuan habis!")
-            return False
+        style.configure("TCombobox",
+                        fieldbackground="#1e293b",
+                        background="#1e293b",
+                        foreground="white")
 
-    def tambah_exp(self, jumlah):
-        self.exp += jumlah
-        print(f"Dapat {jumlah} EXP!")
-        while self.exp >= self.exp_untuk_levelup:
-            self.level_up()
+    # ===== UI =====
+    def setup_ui(self):
+        self.main = tk.Frame(self.root, bg="#0f172a")
+        self.main.place(relx=0, rely=1, relwidth=1, relheight=1)
+        self.slide_in(self.main)
 
-    def level_up(self):
-        self.level += 1
-        self.exp -= self.exp_untuk_levelup
-        self.exp_untuk_levelup = int(self.exp_untuk_levelup * 1.5)
-        self.max_hp += 20
-        self.hp = self.max_hp
-        print(f"\n*** LEVEL UP! Kamu sekarang level {self.level} ***")
-        print(f"Max HP naik jadi {self.max_hp}. HP dipulihkan penuh!\n")
+        tk.Label(self.main,
+                 text="APK Translator",
+                 font=("Segoe UI", 22, "bold"),
+                 fg="#38bdf8",
+                 bg="#0f172a").pack(pady=15)
 
-    def serang(self):
-        base_dmg = SENJATA[self.senjata]["damage"]
-        bonus = random.randint(0, self.level * 2)
-        return base_dmg + bonus
+        # INPUT
+        self.input_text = tk.Text(self.main,
+                                 height=4,
+                                 bg="#1e293b",
+                                 fg="white",
+                                 insertbackground="white",
+                                 bd=0,
+                                 font=("Segoe UI", 11))
+        self.input_text.pack(padx=30, pady=10, fill="x")
 
-    def simpan_data(self):
-        data = {
-            "nama": self.nama, "level": self.level, "hp": self.hp, "max_hp": self.max_hp,
-            "exp": self.exp, "exp_untuk_levelup": self.exp_untuk_levelup, "gold": self.gold,
-            "senjata": self.senjata, "inventory": self.inventory
-        }
-        with open("savegame.json", "w") as f:
-            json.dump(data, f)
-        print("Game berhasil disimpan!")
+        # DROPDOWN
+        self.lang_var = tk.StringVar(value="Indonesian")
+        self.lang_menu = ttk.Combobox(self.main,
+                                     textvariable=self.lang_var,
+                                     values=list(LANGUAGES.keys()),
+                                     state="readonly")
+        self.lang_menu.pack(pady=5)
 
-    def load_data(self):
-        if os.path.exists("savegame.json"):
-            with open("savegame.json", "r") as f:
-                data = json.load(f)
-            self.__dict__.update(data)
-            print("Data game berhasil dimuat!")
-            return True
-        return False
+        # BUTTON FRAME
+        btn_frame = tk.Frame(self.main, bg="#0f172a")
+        btn_frame.pack(pady=15)
 
-# ===== FUNGSI BATTLE =====
-def battle(pemain):
-    musuh = random.choice(MUSUH).copy()
-    print(f"\n!!! Kamu bertemu {musuh['nama']}!!!")
-    print(f"HP Musuh: {musuh['hp']}, Damage: {musuh['damage']}\n")
+        self.create_button(btn_frame, "Translate", "#38bdf8", self.animate_translate, 0)
+        self.create_button(btn_frame, "Copy", "#334155", self.copy_text, 1)
+        self.create_button(btn_frame, "Switch Mode", "#22c55e", self.switch_mode, 2)
 
-    while musuh['hp'] > 0 and pemain.hp > 0:
-        print(f"HP Kamu: {pemain.hp}/{pemain.max_hp} | HP {musuh['nama']}: {musuh['hp']}")
-        aksi = input("Pilih aksi: [1] Serang [2] Pakai Ramuan [3] Lari: ")
+        # OUTPUT
+        self.output_text = tk.Text(self.main,
+                                  height=4,
+                                  bg="#1e293b",
+                                  fg="#22c55e",
+                                  bd=0,
+                                  font=("Segoe UI", 11))
+        self.output_text.pack(padx=30, pady=10, fill="x")
 
-        if aksi == "1":
-            dmg = pemain.serang()
-            musuh['hp'] -= dmg
-            print(f"Kamu menyerang dengan {pemain.senjata}! {musuh['nama']} kena {dmg} damage.")
+        # CANVAS LOADING
+        self.canvas = tk.Canvas(self.main,
+                                width=700,
+                                height=80,
+                                bg="#0f172a",
+                                highlightthickness=0)
+        self.canvas.pack()
 
-            if musuh['hp'] > 0:
-                musuh_dmg = random.randint(musuh['damage']-2, musuh['damage']+2)
-                pemain.hp -= musuh_dmg
-                print(f"{musuh['nama']} menyerang balik! Kamu kena {musuh_dmg} damage.")
+        # EXIT BUTTON
+        self.exit_btn = tk.Label(self.main,
+                                 text="Exit",
+                                 bg="#ef4444",
+                                 fg="white",
+                                 font=("Segoe UI", 10, "bold"),
+                                 padx=15,
+                                 pady=5,
+                                 cursor="hand2")
+        self.exit_btn.pack(pady=10)
+        self.exit_btn.bind("<Button-1>", lambda e: self.fade_out())
 
-        elif aksi == "2":
-            pemain.pakai_ramuan()
-            musuh_dmg = random.randint(musuh['damage']-2, musuh['damage']+2)
-            pemain.hp -= musuh_dmg
-            print(f"Sambil minum ramuan, {musuh['nama']} menyerang! Kena {musuh_dmg} damage.")
+    # ===== BUTTON CUSTOM =====
+    def create_button(self, parent, text, color, command, col):
+        btn = tk.Label(parent,
+                       text=text,
+                       bg=color,
+                       fg="black" if color == "#38bdf8" else "white",
+                       font=("Segoe UI", 10, "bold"),
+                       padx=12,
+                       pady=6,
+                       cursor="hand2")
 
-        elif aksi == "3":
-            if random.random() < 0.6:
-                print("Kamu berhasil lari dari pertarungan!")
-                return
-            else:
-                print("Gagal lari!")
-                musuh_dmg = random.randint(musuh['damage']-2, musuh['damage']+2)
-                pemain.hp -= musuh_dmg
-                print(f"{musuh['nama']} menyerang! Kamu kena {musuh_dmg} damage.")
-        else:
-            print("Pilihan tidak valid!")
+        btn.grid(row=0, column=col, padx=8)
 
-    if pemain.hp <= 0:
-        print("\nKamu kalah... Game Over.")
-        return False
-    else:
-        print(f"\nKamu mengalahkan {musuh['nama']}!")
-        pemain.gold += musuh['gold']
-        print(f"Dapat {musuh['gold']} gold.")
-        pemain.tambah_exp(musuh['exp'])
-        if random.random() < 0.3:
-            pemain.inventory["Ramuan"] = pemain.inventory.get("Ramuan", 0) + 1
-            print("Kamu menemukan 1 Ramuan!")
-        return True
+        # Hover effect
+        btn.bind("<Enter>", lambda e: btn.config(bg="#0ea5e9"))
+        btn.bind("<Leave>", lambda e: btn.config(bg=color))
+        btn.bind("<Button-1>", lambda e: command())
 
-# ===== TOKO =====
-def toko(pemain):
-    while True:
-        print("\n=== TOKO SENJATA CANDI ===")
-        print(f"Gold kamu: {pemain.gold}")
-        for i, (nama, data) in enumerate(SENJATA.items(), 1):
-            print(f"{i}. {nama} - Damage: {data['damage']}, Harga: {data['harga']} gold")
-        print(f"{len(SENJATA)+1}. Ramuan - Pulihkan 30 HP, Harga: 15 gold")
-        print(f"{len(SENJATA)+2}. Keluar")
-
-        pilih = input("Beli apa? ")
+    # ===== TRANSLATE =====
+    def translate_online(self, text, target):
         try:
-            pilih = int(pilih)
-            if 1 <= pilih <= len(SENJATA):
-                nama_senjata = list(SENJATA.keys())[pilih-1]
-                harga = SENJATA[nama_senjata]['harga']
-                if pemain.gold >= harga:
-                    pemain.gold -= harga
-                    pemain.senjata = nama_senjata
-                    print(f"Kamu membeli {nama_senjata}!")
-                else:
-                    print("Gold tidak cukup!")
-            elif pilih == len(SENJATA) + 1:
-                if pemain.gold >= 15:
-                    pemain.gold -= 15
-                    pemain.inventory["Ramuan"] = pemain.inventory.get("Ramuan", 0) + 1
-                    print("Kamu membeli 1 Ramuan!")
-                else:
-                    print("Gold tidak cukup!")
-            elif pilih == len(SENJATA) + 2:
-                break
-            else:
-                print("Pilihan salah!")
-        except ValueError:
-            print("Masukkan angka!")
+            url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={target}&dt=t&q={urllib.parse.quote(text)}"
+            response = urllib.request.urlopen(url)
+            result = json.loads(response.read())
+            return result[0][0][0]
+        except:
+            return "Error translate"
 
-# ===== MAIN GAME =====
-def main():
-    print("=== PETUALANGAN DI NUSANTARA ===")
-    print("Game RPG teks bertema alkulturasi Hindu-Buddha")
+    def animate_translate(self):
+        self.start_loading()
+        self.root.after(200, self.do_translate)
 
-    nama = input("Masukkan nama karaktermu: ")
-    pemain = Pemain(nama)
+    def do_translate(self):
+        text = self.input_text.get("1.0", tk.END).strip()
+        lang = LANGUAGES[self.lang_var.get()]
 
-    if os.path.exists("savegame.json"):
-        muat = input("File save ditemukan. Muat game? y/n: ")
-        if muat.lower() == 'y':
-            pemain.load_data()
+        result = self.translate_online(text, lang)
 
-    while pemain.hp > 0:
-        pemain.status()
-        print("Pilih kegiatan:")
-        print("1. Jelajah Hutan - cari musuh")
-        print("2. Ke Candi - istirahat, pulihkan HP")
-        print("3. Toko Senjata")
-        print("4. Simpan Game")
-        print("5. Keluar")
+        self.stop_loading()
+        self.output_text.delete("1.0", tk.END)
+        self.output_text.insert(tk.END, result)
 
-        aksi = input("Pilihan: ")
+    # ===== LOADING SPINNER =====
+    def start_loading(self):
+        self.loading = True
+        self.angle = 0
+        self.animate_spinner()
 
-        if aksi == "1":
-            hasil = battle(pemain)
-            if hasil == False:
-                break
-        elif aksi == "2":
-            print("Kamu bermeditasi di candi... HP pulih penuh.")
-            pemain.hp = pemain.max_hp
-        elif aksi == "3":
-            toko(pemain)
-        elif aksi == "4":
-            pemain.simpan_data()
-        elif aksi == "5":
-            simpan = input("Simpan game sebelum keluar? y/n: ")
-            if simpan.lower() == 'y':
-                pemain.simpan_data()
-            print("Terima kasih sudah bermain!")
-            break
+    def stop_loading(self):
+        self.loading = False
+        self.canvas.delete("all")
+
+    def animate_spinner(self):
+        if not self.loading:
+            return
+
+        self.canvas.delete("all")
+
+        x, y = 350, 40
+        r = 18
+
+        for i in range(12):
+            angle = (self.angle + i * 30) * math.pi / 180
+            x1 = x + r * 0.5 * math.cos(angle)
+            y1 = y + r * 0.5 * math.sin(angle)
+            x2 = x + r * math.cos(angle)
+            y2 = y + r * math.sin(angle)
+
+            self.canvas.create_line(x1, y1, x2, y2,
+                                    fill="#38bdf8",
+                                    width=3)
+
+        self.angle += 15
+        self.root.after(50, self.animate_spinner)
+
+    # ===== COPY =====
+    def copy_text(self):
+        text = self.output_text.get("1.0", tk.END)
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+
+    # ===== MODE =====
+    def switch_mode(self):
+        if self.mode == "PC":
+            self.mode = "Mobile"
+            self.root.geometry("360x640")
         else:
-            print("Pilihan tidak ada.")
+            self.mode = "PC"
+            self.root.geometry("720x520")
 
-    if pemain.hp <= 0:
-        print("Petualanganmu berakhir di sini, ksatria...")
+    # ===== ANIMATION =====
+    def slide_in(self, widget):
+        for i in range(20):
+            widget.place(relx=0, rely=1 - i * 0.05)
+            self.root.update()
+            self.root.after(10)
+
+    def fade_in(self):
+        for i in range(10):
+            self.root.attributes("-alpha", i * 0.1)
+            self.root.update()
+            self.root.after(20)
+
+    def fade_out(self):
+        for i in range(10, -1, -1):
+            self.root.attributes("-alpha", i * 0.1)
+            self.root.update()
+            self.root.after(20)
+        self.root.destroy()
+
 
 if __name__ == "__main__":
-    main()
+    root = tk.Tk()
+    app = APKTranslatorPro(root)
+    root.mainloop()
