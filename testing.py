@@ -26,7 +26,7 @@ class APKTranslatorPro:
         self.root = root
         self.root.title("APK Translator")
         self.root.geometry("720x520")
-        self.root.configure(bg="#0f172a")
+        self.root.configure(bg="#6e7a97")
         self.mode = "PC"
 
         self.setup_style()
